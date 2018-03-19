@@ -4,6 +4,10 @@ using System.Reflection;
 
 namespace Mirror
 {
+	/// <summary>
+	/// Does the heavy lifting.
+	/// Currently only supports a limited set of method parameters. Once you understand the concept though it should be easy to expand this.
+	/// </summary>
 	public class CachedReflection
 	{
 		public static Action<object, TParameter1> CreateAction<TParameter1>(Type type, string methodName)

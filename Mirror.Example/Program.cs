@@ -10,6 +10,7 @@ namespace Mirror.Example
 			var list = new List<object> { new Foo(), new Foo2() };
 			foreach (var foo in list)
 			{
+				// Normally you would store these actions and funcs in a dictionary so you can reuse them for future calls easily.
 				var type = foo.GetType();
 				var action = CachedReflection.CreateAction<int>(type, nameof(IFoo.DoSomething));
 				var action2 = CachedReflection.CreateAction(type, nameof(IFoo.DoSomething));
