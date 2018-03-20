@@ -8,4 +8,4 @@ Showing you how to get a `Action` or a `Func` when given only a type and a metho
 Currently the main point of this repo is to get the concept accross on how to achieve this. Do not use this directly in production code. The code is currently not finished (and iam not sure if I ever will finish it) and not fully tested. Mostly leaving this here for ppl to learn from it and so that this 'trick' is easy to find in a time of need.
 
 ## Quickstart
-The code that does the heavy lifting can be found [here](https://github.com/Barsonax/Mirror/blob/master/Mirror/CachedReflection.cs). To find a example of how to use this you can check [this](https://github.com/Barsonax/Mirror/blob/master/Mirror.Example/Program.cs).
+The code that does the heavy lifting can be found [here](https://github.com/Barsonax/Mirror/blob/master/Mirror/DelegateFactory.cs). To find a example of how to use this you can check [this](https://github.com/Barsonax/Mirror/blob/master/Mirror.Example/Program.cs).
