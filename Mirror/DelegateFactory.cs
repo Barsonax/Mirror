@@ -12,7 +12,7 @@ namespace Mirror
 	{
 		public static Func<object, object, object, object, object> GetDelegate(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3)
 		{
-			return (Func<object, object, object, object, object>)CreateDelegate(type, methodName, parameter1, parameter2);
+			return (Func<object, object, object, object, object>)CreateDelegate(type, methodName, parameter1, parameter2, parameter3);
 		}
 
 		public static Func<object, object, object, object> GetDelegate(Type type, string methodName, Type parameter1, Type parameter2)
@@ -33,6 +33,7 @@ namespace Mirror
 		private static object CreateDelegate(Type type, string methodName, params Type[] parameterTypes)
 		{
 			var methodInfo = type.GetRuntimeMethod(methodName, parameterTypes);
+			if (methodInfo == null) throw new ArgumentException($"Could not find a method on type {type} with name {methodName} and parameter types {string.Join(", ", parameterTypes.Select(x => x.Name))}");
 			return CreateDelegate(methodInfo);
 		}
 
@@ -40,9 +41,10 @@ namespace Mirror
 		{
 			var genericMethodParameters = GetMethodParameters(method);
 			var genericHelper = (from m in typeof(DelegateFactory).GetRuntimeMethods()
-								 where m.Name == nameof(CreateFuncHelper)
+								 where m.Name == nameof(CreateDelegateHelper)
 								 where m.GetGenericArguments().Length == genericMethodParameters.Length
-								 select m).First();
+								 select m).FirstOrDefault();
+			if (genericHelper == null) throw new NotImplementedException($"No {nameof(CreateDelegateHelper)} found with {genericMethodParameters.Length} generic parameters");
 
 			var constructedHelper = genericHelper.MakeGenericMethod(genericMethodParameters);
 			return constructedHelper.Invoke(null, new object[] { method });
@@ -64,7 +66,43 @@ namespace Mirror
 
 		private class NoReturn { }
 
-		private static Func<object, object, object> CreateFuncHelper<TObj, TP1, TRet>(MethodInfo method)
+		private static Func<object, object, object, object, object> CreateDelegateHelper<TObj, TP1, TP2, TP3, TRet>(MethodInfo method)
+		{
+			if (typeof(TRet) != typeof(NoReturn))
+			{
+				var func = (Func<TObj, TP1, TP2, TP3, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TRet>), method);
+				return (target, p1, p2, p3) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3);
+			}
+			else
+			{
+				var func = (Action<TObj, TP1, TP2, TP3>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3>), method);
+				return (target, p1, p2, p3) =>
+				{
+					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3);
+					return null;
+				};
+			}
+		}
+
+		private static Func<object, object, object, object> CreateDelegateHelper<TObj, TP1, TP2, TRet>(MethodInfo method)
+		{
+			if (typeof(TRet) != typeof(NoReturn))
+			{
+				var func = (Func<TObj, TP1, TP2, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TRet>), method);
+				return (target, p1, p2) => func((TObj)target, (TP1)p1, (TP2)p2);
+			}
+			else
+			{
+				var func = (Action<TObj, TP1, TP2>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2>), method);
+				return (target, p1, p2) =>
+				{
+					func((TObj)target, (TP1)p1, (TP2)p2);
+					return null;
+				};
+			}
+		}
+
+		private static Func<object, object, object> CreateDelegateHelper<TObj, TP1, TRet>(MethodInfo method)
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
@@ -82,7 +120,7 @@ namespace Mirror
 			}
 		}
 
-		private static Func<object, object> CreateFuncHelper<TObj, TRet>(MethodInfo method)
+		private static Func<object, object> CreateDelegateHelper<TObj, TRet>(MethodInfo method)
 			where TObj : class
 		{
 			if (typeof(TRet) != typeof(NoReturn))
@@ -101,6 +139,4 @@ namespace Mirror
 			}
 		}
 	}
-
-
 }
