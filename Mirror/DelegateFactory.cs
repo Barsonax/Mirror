@@ -10,28 +10,30 @@ namespace Mirror
 	/// </summary>
 	public class DelegateFactory
 	{
-		public static Func<object, object, object, object, object> GetDelegate(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3)
+		public static Func<object, object, object, object, object> Create(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3, Type[] genericTypeParameters = null)
 		{
-			return (Func<object, object, object, object, object>)CreateDelegate(type, methodName, parameter1, parameter2, parameter3);
+			return (Func<object, object, object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1, parameter2, parameter3);
 		}
 
-		public static Func<object, object, object, object> GetDelegate(Type type, string methodName, Type parameter1, Type parameter2)
+		public static Func<object, object, object, object> Create(Type type, string methodName, Type parameter1, Type parameter2, Type[] genericTypeParameters = null)
 		{
-			return (Func<object, object, object, object>)CreateDelegate(type, methodName, parameter1, parameter2);
+			return (Func<object, object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1, parameter2);
 		}
 
-		public static Func<object, object, object> GetDelegate(Type type, string methodName, Type parameter1)
+		public static Func<object, object, object> Create(Type type, string methodName, Type parameter1, Type[] genericTypeParameters = null)
 		{
-			return (Func<object, object, object>)CreateDelegate(type, methodName, parameter1);
+			return (Func<object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1);
 		}
 
-		public static Func<object, object> GetDelegate(Type type, string methodName)
+		public static Func<object, object> Create(Type type, string methodName, Type[] genericTypeParameters = null)
 		{
-			return (Func<object, object>)CreateDelegate(type, methodName);
+			return (Func<object, object>)CreateDelegate(type, methodName, genericTypeParameters);
 		}
 
-		private static object CreateDelegate(Type type, string methodName, params Type[] parameterTypes)
+		private static object CreateDelegate(Type type, string methodName, Type[] genericTypeParameters = null, params Type[] parameterTypes)
 		{
+			//TODO add support for generic methods
+			if (genericTypeParameters != null && genericTypeParameters.Length > 0) throw new NotImplementedException("Generics are currently not supported yet");
 			var methodInfo = type.GetRuntimeMethod(methodName, parameterTypes);
 			if (methodInfo == null) throw new ArgumentException($"Could not find a method on type {type} with name {methodName} and parameter types {string.Join(", ", parameterTypes.Select(x => x.Name))}");
 			return CreateDelegate(methodInfo);
@@ -39,11 +41,10 @@ namespace Mirror
 
 		private static object CreateDelegate(MethodInfo method)
 		{
+			if (method == null) throw new ArgumentNullException(nameof(method));
 			var genericMethodParameters = GetMethodParameters(method);
-			var genericHelper = (from m in typeof(DelegateFactory).GetRuntimeMethods()
-								 where m.Name == nameof(CreateDelegateHelper)
-								 where m.GetGenericArguments().Length == genericMethodParameters.Length
-								 select m).FirstOrDefault();
+			var genericHelper = typeof(DelegateFactory).GetRuntimeMethods().Where(m => m.Name == nameof(CreateDelegateHelper)).FirstOrDefault(m => m.GetGenericArguments().Length == genericMethodParameters.Length);
+
 			if (genericHelper == null) throw new NotImplementedException($"No {nameof(CreateDelegateHelper)} found with {genericMethodParameters.Length} generic parameters");
 
 			var constructedHelper = genericHelper.MakeGenericMethod(genericMethodParameters);
@@ -63,8 +64,6 @@ namespace Mirror
 			genericMethodParameters[genericMethodParameters.Length - 1] = method.ReturnType != typeof(void) ? method.ReturnType : typeof(NoReturn);
 			return genericMethodParameters;
 		}
-
-		private class NoReturn { }
 
 		private static Func<object, object, object, object, object> CreateDelegateHelper<TObj, TP1, TP2, TP3, TRet>(MethodInfo method)
 		{
@@ -138,5 +137,7 @@ namespace Mirror
 				};
 			}
 		}
+
+		private class NoReturn { }
 	}
 }

@@ -13,14 +13,16 @@ namespace Mirror.Tests
 		{
 			get
 			{
-				var cachedReflectionMethods = typeof(DelegateFactory).GetRuntimeMethods()
-					.Where(x => x.Name == nameof(DelegateFactory.GetDelegate));
+				var cachedReflectionMethods = from m in typeof(DelegateFactory).GetRuntimeMethods()
+											  where m.IsPublic
+											  where m.Name == nameof(DelegateFactory.Create)
+											  select m;
 
 				foreach (var methodInfo in cachedReflectionMethods)
 				{
 					var methodDescriptors = new List<MethodDescriptor>();
-					var methodName = $"{methodInfo.Name}With{methodInfo.GetParameters().Length - 2}ParameterTypes";
-					var parameters = new Type[methodInfo.GetParameters().Length - 2];
+					var methodName = $"{methodInfo.Name}With{methodInfo.GetParameters().Length - 3}ParameterTypes";
+					var parameters = new Type[methodInfo.GetParameters().Length - 3];
 					for (var i = 0; i < parameters.Length; i++)
 					{
 						parameters[i] = typeof(int);
@@ -65,15 +67,16 @@ namespace Mirror.Tests
 		[MemberData(nameof(TestCases))]
 		public void GetDelegate(GetDelegateTestCase delegateTestCase)
 		{
-			var parameterTypes = new Type[delegateTestCase.MethodParameters.Length + 2];
+			var parameterTypes = new Type[delegateTestCase.MethodParameters.Length + 3];
 			parameterTypes[0] = typeof(Type);
 			parameterTypes[1] = typeof(string);
 			for (var i = 0; i < delegateTestCase.MethodParameters.Length; i++)
 			{
 				parameterTypes[i + 2] = typeof(Type);
 			}
-			
-			var parametersValues = new object[delegateTestCase.MethodParameters.Length + 2];
+			parameterTypes[parameterTypes.Length - 1] = typeof(Type[]);
+
+			var parametersValues = new object[delegateTestCase.MethodParameters.Length + 3];
 			parametersValues[0] = delegateTestCase.ObjInstance.GetType();
 			parametersValues[1] = delegateTestCase.MethodName;
 			for (var i = 0; i < delegateTestCase.MethodParameters.Length; i++)
@@ -81,7 +84,7 @@ namespace Mirror.Tests
 				parametersValues[i + 2] = delegateTestCase.MethodParameters[i].GetType();
 			}
 
-			var delegateFactoryMethod = typeof(DelegateFactory).GetRuntimeMethod(nameof(DelegateFactory.GetDelegate), parameterTypes);
+			var delegateFactoryMethod = typeof(DelegateFactory).GetRuntimeMethod(nameof(DelegateFactory.Create), parameterTypes);
 			var methodDelegate = delegateFactoryMethod.Invoke(delegateTestCase.ObjInstance, parametersValues);
 			var funcInvokeMethod = methodDelegate.GetType().GetRuntimeMethods().First(x => x.Name == nameof(Func<int>.Invoke));
 			var returnValue = funcInvokeMethod.Invoke(methodDelegate, new[] { delegateTestCase.ObjInstance }.Concat(delegateTestCase.MethodParameters).ToArray());
