@@ -10,6 +10,17 @@ namespace Mirror
 	/// </summary>
 	public class DelegateFactory
 	{
+		private static MethodInfo[] _genericHelpers;
+		static DelegateFactory()
+		{
+			var foundMethods = typeof(DelegateFactory).GetRuntimeMethods().Where(m => m.Name == nameof(CreateDelegateHelper)).ToArray();
+			_genericHelpers = new MethodInfo[foundMethods.Length + 2];
+			for (int i = 0; i < foundMethods.Length; i++)
+			{
+				_genericHelpers[foundMethods[i].GetGenericArguments().Length] = foundMethods[i];
+			}
+		}
+
 		public static Func<object, object, object, object, object, object, object, object> Create(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3, Type parameter4, Type parameter5, Type parameter6, Type[] genericTypeParameters = null)
 		{
 			return (Func<object, object, object, object, object, object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1, parameter2, parameter3, parameter4, parameter5, parameter6);
@@ -177,12 +188,29 @@ namespace Mirror
 			MethodInfo methodInfo;
 			if (genericMethodParameters != null && genericMethodParameters.Length > 0)
 			{
-				var genericMethod = type.GetRuntimeMethods().Where(m => m.Name == methodName).FirstOrDefault(m => m.GetGenericArguments().Length == genericMethodParameters.Length);
+				MethodInfo genericMethod = null;
+				foreach (var m in type.GetRuntimeMethods())
+				{
+					if (m.Name == methodName && m.GetGenericArguments().Length == genericMethodParameters.Length)
+					{
+						genericMethod = m;
+						break;
+					}
+				}
+
 				methodInfo = genericMethod.MakeGenericMethod(genericMethodParameters);
 			}
 			else
 			{
-				methodInfo = type.GetRuntimeMethods().Where(m => m.Name == methodName).FirstOrDefault(m => m.GetGenericArguments().Length == 0);
+				methodInfo = null;
+				foreach (var m in type.GetRuntimeMethods())
+				{
+					if (m.Name == methodName && !m.IsGenericMethod)
+					{
+						methodInfo = m;
+						break;
+					}
+				}
 			}
 
 			if (methodInfo == null) throw new ArgumentException($"Could not find a method on type {type} with name {methodName} and parameter types {string.Join(", ", parameterTypes.Select(x => x.Name))}");
@@ -192,7 +220,8 @@ namespace Mirror
 		private static object CreateDelegate(MethodInfo method)
 		{
 			var genericMethodParameters = GetMethodParameters(method);
-			var genericHelper = typeof(DelegateFactory).GetRuntimeMethods().Where(m => m.Name == nameof(CreateDelegateHelper)).FirstOrDefault(m => m.GetGenericArguments().Length == genericMethodParameters.Length);
+			var genericHelper = _genericHelpers[genericMethodParameters.Length];
+			//var genericHelper = typeof(DelegateFactory).GetRuntimeMethods().Where(m => m.Name == nameof(CreateDelegateHelper)).FirstOrDefault(m => m.GetGenericArguments().Length == genericMethodParameters.Length);
 
 			if (genericHelper == null) throw new NotImplementedException($"No {nameof(CreateDelegateHelper)} found with {genericMethodParameters.Length} generic parameters");
 
