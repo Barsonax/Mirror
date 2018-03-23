@@ -51,6 +51,13 @@ namespace Mirror
 			return (Func<object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1);
 		}
 
+		/// <summary>
+		/// Returns a <see cref="Func{Instance,Return}"/> that can be used to call the method/>
+		/// </summary>
+		/// <param name="type">The type that has the method</param>
+		/// <param name="methodName">The name of the method</param>
+		/// <param name="genericTypeParameters">Generic parameters for the method</param>
+		/// <returns></returns>
 		public static Func<object, object> Create(Type type, string methodName, Type[] genericTypeParameters = null)
 		{
 			return (Func<object, object>)CreateDelegate(type, methodName, genericTypeParameters);
