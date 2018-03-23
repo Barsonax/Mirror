@@ -27,6 +27,7 @@ namespace Mirror.Tests
 					{
 						parameters[i] = typeof(int);
 					}
+					methodDescriptors.Add(new MethodDescriptor(methodName+"NoReturn", parameters, null, false));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int) }));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int), typeof(float) }));
@@ -36,7 +37,7 @@ namespace Mirror.Tests
 				var type = typeBuilder.CreateClass("GetDelegateDynamicTestClass", methodDescriptors);
 				var instance = Activator.CreateInstance(type);
 
-				var methods = type.GetRuntimeMethods().Where(x => x.IsPublic && x.ReturnType == typeof(MethodCallInfo)).ToArray();
+				var methods = type.GetRuntimeMethods().Where(x => x.IsPublic && (x.ReturnType == typeof(MethodCallInfo) || x.Name.Contains("NoReturn"))).ToArray();
 				foreach (var methodDescriptor in methodDescriptors)
 				{
 					var methodInfo = (from m in methods
@@ -113,9 +114,16 @@ namespace Mirror.Tests
 			var funcInvokeMethod = methodDelegate.GetType().GetRuntimeMethods().First(x => x.Name == nameof(Func<int>.Invoke));
 			var returnValue = (MethodCallInfo)funcInvokeMethod.Invoke(methodDelegate, new[] { delegateTestCase.ObjInstance }.Concat(delegateTestCase.MethodParameters).ToArray());
 
-			Assert.Equal(delegateTestCase.ExpectedReturn.MethodName, returnValue.MethodName);
-			CheckParameterValues(delegateTestCase.ExpectedReturn, returnValue);
-			CheckGenericTypeParameters(delegateTestCase.ExpectedReturn, returnValue);
+			if (delegateTestCase.ExpectedReturn != null)
+			{
+				Assert.Equal(delegateTestCase.ExpectedReturn.MethodName, returnValue.MethodName);
+				CheckParameterValues(delegateTestCase.ExpectedReturn, returnValue);
+				CheckGenericTypeParameters(delegateTestCase.ExpectedReturn, returnValue);
+			}
+			else
+			{
+				Assert.Null(returnValue);
+			}
 		}
 
 		private void CheckParameterValues(MethodCallInfo expected, MethodCallInfo actual)

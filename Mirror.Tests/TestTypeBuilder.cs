@@ -37,27 +37,35 @@ namespace Mirror.Tests
 			var parameters = string.Join(", ", methodDescriptor.Parameters.Select((x, i) => $"p{i}"));
 			var genericParameters = string.Join(", ", methodDescriptor.GenericParameters.Select((x, i) => $"T{i}"));
 			var genericTypeParameters = string.Join(", ", methodDescriptor.GenericParameters.Select((x, i) => $"typeof({x.Name})"));
-
+			var returnType = methodDescriptor.ReturnsValue ? "MethodCallInfo" : "void";
 			if (methodDescriptor.GenericParameters.Length > 0)
 			{
-				stringBuilder.Append($"public MethodCallInfo {methodDescriptor.MethodName}<{genericParameters}>(");
+				stringBuilder.Append($"public {returnType} {methodDescriptor.MethodName}<{genericParameters}>(");
 			}
 			else
 			{
-				stringBuilder.Append($"public MethodCallInfo {methodDescriptor.MethodName}(");
+				stringBuilder.Append($"public {returnType} {methodDescriptor.MethodName}(");
 			}
 
 			stringBuilder.Append(string.Join(", ", methodDescriptor.Parameters.Select((x, i) => $"{x.Name} p{i}")));
 			stringBuilder.AppendLine(")");
 			stringBuilder.AppendLine("{");
 
-			if (methodDescriptor.GenericParameters.Length > 0)
+			if (methodDescriptor.ReturnsValue)
 			{
-				stringBuilder.AppendLine($"return new MethodCallInfo(new object[] {{{parameters}}}, \"TestMethod\", new[] {{{genericTypeParameters}}});");
+				if (methodDescriptor.GenericParameters.Length > 0)
+				{
+					stringBuilder.AppendLine(
+						$"return new MethodCallInfo(new object[] {{{parameters}}}, \"TestMethod\", new[] {{{genericTypeParameters}}});");
+				}
+				else
+				{
+					stringBuilder.AppendLine($"return new MethodCallInfo(new object[] {{{parameters}}}, \"TestMethod\");");
+				}
 			}
 			else
 			{
-				stringBuilder.AppendLine($"return new MethodCallInfo(new object[] {{{parameters}}}, \"TestMethod\");");
+				stringBuilder.AppendLine("return;");
 			}
 
 			stringBuilder.AppendLine("}");
@@ -69,12 +77,14 @@ namespace Mirror.Tests
 		public string MethodName { get; }
 		public Type[] Parameters { get; }
 		public Type[] GenericParameters { get; }
+		public bool ReturnsValue { get; }
 
-		public MethodDescriptor(string methodName, Type[] parameters, Type[] genericParameters = null)
+		public MethodDescriptor(string methodName, Type[] parameters, Type[] genericParameters = null, bool returnsValue = true)
 		{
 			MethodName = methodName;
 			Parameters = parameters;
 			GenericParameters = genericParameters ?? new Type[0];
+			ReturnsValue = returnsValue;
 		}
 	}
 }
