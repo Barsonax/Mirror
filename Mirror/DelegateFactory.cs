@@ -191,7 +191,6 @@ namespace Mirror
 
 		private static object CreateDelegate(MethodInfo method)
 		{
-			if (method == null) throw new ArgumentNullException(nameof(method));
 			var genericMethodParameters = GetMethodParameters(method);
 			var genericHelper = typeof(DelegateFactory).GetRuntimeMethods().Where(m => m.Name == nameof(CreateDelegateHelper)).FirstOrDefault(m => m.GetGenericArguments().Length == genericMethodParameters.Length);
 

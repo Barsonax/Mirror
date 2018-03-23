@@ -26,7 +26,7 @@ namespace Mirror.Tests
 					for (var i = 0; i < parameters.Length; i++)
 					{
 						parameters[i] = typeof(int);
-					}					
+					}
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int) }));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int), typeof(float) }));
@@ -88,6 +88,18 @@ namespace Mirror.Tests
 			public string Name { get; }
 			public override string ToString() => Name;
 		}
+
+		[Fact]
+		public void GetDelegate_MethodDoesNotExist_ThrowsArgumentException()
+		{
+			var instance = new MethodDoesNotExistClass();
+			Assert.Throws<ArgumentException>(() =>
+			{
+				DelegateFactory.Create(instance.GetType(), "SomeMethod");
+			});
+		}
+
+		public class MethodDoesNotExistClass { }
 
 		[Theory]
 		[MemberData(nameof(TestCases))]
