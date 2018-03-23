@@ -77,17 +77,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>), method);
-				return (target, p1, p2, p3, p4, p5, p6, p7, p8) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7, p8) => func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7, p8) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>), method);
-				return (target, p1, p2, p3, p4, p5, p6, p7, p8) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
-					return null;
-				};
+					var func = (Action<TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>)Delegate.CreateDelegate(typeof(Action<TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7, p8) =>
+					{
+						func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7, p8) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -95,17 +115,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>), method);
-				return (target, p1, p2, p3, p4, p5, p6, p7) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7) => func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7>), method);
-				return (target, p1, p2, p3, p4, p5, p6, p7) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
-					return null;
-				};
+					var func = (Action<TP1, TP2, TP3, TP4, TP5, TP6, TP7>)Delegate.CreateDelegate(typeof(Action<TP1, TP2, TP3, TP4, TP5, TP6, TP7>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7) =>
+					{
+						func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7>), method);
+					return (target, p1, p2, p3, p4, p5, p6, p7) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -113,17 +153,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TRet>), method);
-				return (target, p1, p2, p3, p4, p5, p6) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TP3, TP4, TP5, TP6, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TP3, TP4, TP5, TP6, TRet>), method);
+					return (target, p1, p2, p3, p4, p5, p6) => func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TRet>), method);
+					return (target, p1, p2, p3, p4, p5, p6) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6>), method);
-				return (target, p1, p2, p3, p4, p5, p6) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6);
-					return null;
-				};
+					var func = (Action<TP1, TP2, TP3, TP4, TP5, TP6>)Delegate.CreateDelegate(typeof(Action<TP1, TP2, TP3, TP4, TP5, TP6>), method);
+					return (target, p1, p2, p3, p4, p5, p6) =>
+					{
+						func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6>), method);
+					return (target, p1, p2, p3, p4, p5, p6) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -131,17 +191,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TRet>), method);
-				return (target, p1, p2, p3, p4, p5) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TP3, TP4, TP5, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TP3, TP4, TP5, TRet>), method);
+					return (target, p1, p2, p3, p4, p5) => func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TRet>), method);
+					return (target, p1, p2, p3, p4, p5) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5>), method);
-				return (target, p1, p2, p3, p4, p5) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5);
-					return null;
-				};
+					var func = (Action<TP1, TP2, TP3, TP4, TP5>)Delegate.CreateDelegate(typeof(Action<TP1, TP2, TP3, TP4, TP5>), method);
+					return (target, p1, p2, p3, p4, p5) =>
+					{
+						func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5>), method);
+					return (target, p1, p2, p3, p4, p5) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -149,17 +229,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TP3, TP4, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TRet>), method);
-				return (target, p1, p2, p3, p4) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TP3, TP4, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TP3, TP4, TRet>), method);
+					return (target, p1, p2, p3, p4) => func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TP3, TP4, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TRet>), method);
+					return (target, p1, p2, p3, p4) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2, TP3, TP4>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4>), method);
-				return (target, p1, p2, p3, p4) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4);
-					return null;
-				};
+					var func = (Action<TP1, TP2, TP3, TP4>)Delegate.CreateDelegate(typeof(Action<TP1, TP2, TP3, TP4>), method);
+					return (target, p1, p2, p3, p4) =>
+					{
+						func((TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2, TP3, TP4>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4>), method);
+					return (target, p1, p2, p3, p4) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -167,17 +267,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TP3, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TRet>), method);
-				return (target, p1, p2, p3) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TP3, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TP3, TRet>), method);
+					return (target, p1, p2, p3) => func((TP1)p1, (TP2)p2, (TP3)p3);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TP3, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TRet>), method);
+					return (target, p1, p2, p3) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2, TP3>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3>), method);
-				return (target, p1, p2, p3) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3);
-					return null;
-				};
+					var func = (Action<TP1, TP2, TP3>)Delegate.CreateDelegate(typeof(Action<TP1, TP2, TP3>), method);
+					return (target, p1, p2, p3) =>
+					{
+						func((TP1)p1, (TP2)p2, (TP3)p3);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2, TP3>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3>), method);
+					return (target, p1, p2, p3) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -185,17 +305,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TP2, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TRet>), method);
-				return (target, p1, p2) => func((TObj)target, (TP1)p1, (TP2)p2);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TP2, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TP2, TRet>), method);
+					return (target, p1, p2) => func((TP1)p1, (TP2)p2);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TP2, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TRet>), method);
+					return (target, p1, p2) => func((TObj)target, (TP1)p1, (TP2)p2);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1, TP2>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2>), method);
-				return (target, p1, p2) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1, (TP2)p2);
-					return null;
-				};
+					var func = (Action<TP1, TP2>)Delegate.CreateDelegate(typeof(Action<TP1, TP2>), method);
+					return (target, p1, p2) =>
+					{
+						func((TP1)p1, (TP2)p2);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1, TP2>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2>), method);
+					return (target, p1, p2) =>
+					{
+						func((TObj)target, (TP1)p1, (TP2)p2);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -203,17 +343,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TP1, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TRet>), method);
-				return (target, p1) => func((TObj)target, (TP1)p1);
+				if (method.IsStatic)
+				{
+					var func = (Func<TP1, TRet>)Delegate.CreateDelegate(typeof(Func<TP1, TRet>), method);
+					return (target, p1) => func((TP1)p1);
+				}
+				else
+				{
+					var func = (Func<TObj, TP1, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TRet>), method);
+					return (target, p1) => func((TObj)target, (TP1)p1);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj, TP1>)Delegate.CreateDelegate(typeof(Action<TObj, TP1>), method);
-				return (target, p1) =>
+				if (method.IsStatic)
 				{
-					func((TObj)target, (TP1)p1);
-					return null;
-				};
+					var func = (Action<TP1>)Delegate.CreateDelegate(typeof(Action<TP1>), method);
+					return (target, p1) =>
+					{
+						func((TP1)p1);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj, TP1>)Delegate.CreateDelegate(typeof(Action<TObj, TP1>), method);
+					return (target, p1) =>
+					{
+						func((TObj)target, (TP1)p1);
+						return null;
+					};
+				}
 			}
 		}
 
@@ -222,17 +382,37 @@ namespace Mirror
 		{
 			if (typeof(TRet) != typeof(NoReturn))
 			{
-				var func = (Func<TObj, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TRet>), method);
-				return target => func(target as TObj);
+				if (method.IsStatic)
+				{
+					var func = (Func<TRet>)Delegate.CreateDelegate(typeof(Func<TRet>), method);
+					return target => func();
+				}
+				else
+				{
+					var func = (Func<TObj, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TRet>), method);
+					return target => func(target as TObj);
+				}
 			}
 			else
 			{
-				var func = (Action<TObj>)Delegate.CreateDelegate(typeof(Action<TObj>), method);
-				return target =>
+				if (method.IsStatic)
 				{
-					func(target as TObj);
-					return default(TRet);
-				};
+					var func = (Action)Delegate.CreateDelegate(typeof(Action), method);
+					return target =>
+					{
+						func();
+						return default(TRet);
+					};
+				}
+				else
+				{
+					var func = (Action<TObj>)Delegate.CreateDelegate(typeof(Action<TObj>), method);
+					return target =>
+					{
+						func(target as TObj);
+						return default(TRet);
+					};
+				}
 			}
 		}
 

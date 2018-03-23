@@ -34,13 +34,20 @@ namespace Mirror.Tests
 					methodDescriptors.Add(new MethodDescriptor(methodName + "NoReturn", parameters, null, false));
 					methodDescriptors.Add(new MethodDescriptor(methodName + "NoReturn", parameters, new[] { typeof(int) }, false));
 					methodDescriptors.Add(new MethodDescriptor(methodName + "NoReturn", parameters, new[] { typeof(int), typeof(float) }, false));
+
+					methodDescriptors.Add(new MethodDescriptor(methodName + "StaticNoReturn", parameters, null, false, true));
+					methodDescriptors.Add(new MethodDescriptor(methodName + "Static", parameters, null, true, true));
+					methodDescriptors.Add(new MethodDescriptor(methodName + "Static", parameters, new[] { typeof(int) }, false, true));
 				}
 
-				var typeBuilder = new TestTypeBuilder();
+				var typeBuilder = new TestTypeBuilder("TestAssembly");
 				var type = typeBuilder.CreateClass("GetDelegateDynamicTestClass", methodDescriptors);
 				var instance = Activator.CreateInstance(type);
 
-				var methods = type.GetRuntimeMethods().Where(x => x.IsPublic && (x.ReturnType == typeof(MethodCallInfo) || x.Name.Contains("NoReturn"))).ToArray();
+				var methods = (from m in type.GetRuntimeMethods()
+							   where m.IsPublic
+							   where m.Module.ScopeName == "TestAssembly"
+							   select m).ToArray();
 				foreach (var methodDescriptor in methodDescriptors)
 				{
 					var methodInfo = (from m in methods
@@ -57,12 +64,12 @@ namespace Mirror.Tests
 					{
 						var genericMethod = methodInfo.MakeGenericMethod(methodDescriptor.GenericParameters);
 						var expectedReturn = (MethodCallInfo)genericMethod.Invoke(instance, parameterValues);
-						yield return new object[] { new GetDelegateTestCase(instance, parameterValues, genericMethod.Name, expectedReturn, $"{genericMethod.Name}And{methodDescriptor.GenericParameters.Length}GenericParameters", methodDescriptor.GenericParameters) };
+						yield return new object[] { new GetDelegateTestCase(type, instance, parameterValues, genericMethod.Name, expectedReturn, $"{genericMethod.Name}And{methodDescriptor.GenericParameters.Length}GenericParameters", methodDescriptor.IsStatic, methodDescriptor.GenericParameters) };
 					}
 					else
 					{
 						var expectedReturn = (MethodCallInfo)methodInfo.Invoke(instance, parameterValues);
-						yield return new object[] { new GetDelegateTestCase(instance, parameterValues, methodInfo.Name, expectedReturn, methodInfo.Name) };
+						yield return new object[] { new GetDelegateTestCase(type, instance, parameterValues, methodInfo.Name, expectedReturn, methodInfo.Name, methodDescriptor.IsStatic) };
 					}
 				}
 			}
@@ -70,7 +77,7 @@ namespace Mirror.Tests
 
 		public class GetDelegateTestCase
 		{
-			public GetDelegateTestCase(object objInstance, object[] methodParameters, string methodName, MethodCallInfo expectedReturn, string name, Type[] genericMethodParameters = null)
+			public GetDelegateTestCase(Type type, object objInstance, object[] methodParameters, string methodName, MethodCallInfo expectedReturn, string name, bool isStatic, Type[] genericMethodParameters = null)
 			{
 				ObjInstance = objInstance;
 				MethodParameters = methodParameters;
@@ -78,13 +85,17 @@ namespace Mirror.Tests
 				ExpectedReturn = expectedReturn;
 				Name = name;
 				GenericMethodParameters = genericMethodParameters ?? new Type[0];
+				IsStatic = isStatic;
+				Type = type;
 			}
 
+			public Type Type { get; }
 			public string MethodName { get; }
 			public object[] MethodParameters { get; }
 			public object ObjInstance { get; }
 			public Type[] GenericMethodParameters { get; }
 			public MethodCallInfo ExpectedReturn { get; }
+			public bool IsStatic { get; }
 			public string Name { get; }
 			public override string ToString() => Name;
 		}
@@ -116,7 +127,7 @@ namespace Mirror.Tests
 
 
 			var parametersValues = new object[delegateTestCase.MethodParameters.Length + 3];
-			parametersValues[0] = delegateTestCase.ObjInstance.GetType();
+			parametersValues[0] = delegateTestCase.Type;
 			parametersValues[1] = delegateTestCase.MethodName;
 			for (var i = 0; i < delegateTestCase.MethodParameters.Length; i++)
 			{

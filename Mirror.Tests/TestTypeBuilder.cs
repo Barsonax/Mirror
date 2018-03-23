@@ -13,6 +13,11 @@ namespace Mirror.Tests
 
 		readonly CompilerParameters objCompilerParameters = new CompilerParameters();
 
+		public TestTypeBuilder(string moduleName)
+		{
+			objCompilerParameters.OutputAssembly = moduleName;
+		}
+
 		public Type CreateClass(string typeName, IEnumerable<MethodDescriptor> methods)
 		{
 			objCompilerParameters.ReferencedAssemblies.Add(Assembly.GetCallingAssembly().Location);
@@ -38,17 +43,11 @@ namespace Mirror.Tests
 			var genericParameters = string.Join(", ", methodDescriptor.GenericParameters.Select((x, i) => $"T{i}"));
 			var genericTypeParameters = string.Join(", ", methodDescriptor.GenericParameters.Select((x, i) => $"typeof({x.Name})"));
 			var returnType = methodDescriptor.ReturnsValue ? "MethodCallInfo" : "void";
-			if (methodDescriptor.GenericParameters.Length > 0)
-			{
-				stringBuilder.Append($"public {returnType} {methodDescriptor.MethodName}<{genericParameters}>(");
-			}
-			else
-			{
-				stringBuilder.Append($"public {returnType} {methodDescriptor.MethodName}(");
-			}
-
-			stringBuilder.Append(string.Join(", ", methodDescriptor.Parameters.Select((x, i) => $"{x.Name} p{i}")));
-			stringBuilder.AppendLine(")");
+			stringBuilder.Append("public ");
+			if (methodDescriptor.IsStatic) stringBuilder.Append("static ");
+			stringBuilder.Append($"{returnType} {methodDescriptor.MethodName}");
+			if (methodDescriptor.GenericParameters.Length > 0) stringBuilder.Append($"<{genericParameters}>");
+			stringBuilder.Append($"({string.Join(", ", methodDescriptor.Parameters.Select((x, i) => $"{x.Name} p{i}"))})");
 			stringBuilder.AppendLine("{");
 
 			if (methodDescriptor.ReturnsValue)
@@ -78,13 +77,15 @@ namespace Mirror.Tests
 		public Type[] Parameters { get; }
 		public Type[] GenericParameters { get; }
 		public bool ReturnsValue { get; }
+		public bool IsStatic { get; }
 
-		public MethodDescriptor(string methodName, Type[] parameters, Type[] genericParameters = null, bool returnsValue = true)
+		public MethodDescriptor(string methodName, Type[] parameters, Type[] genericParameters = null, bool returnsValue = true, bool isStatic = false)
 		{
 			MethodName = methodName;
 			Parameters = parameters;
 			GenericParameters = genericParameters ?? new Type[0];
 			ReturnsValue = returnsValue;
+			IsStatic = isStatic;
 		}
 	}
 }
