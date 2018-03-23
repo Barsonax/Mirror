@@ -2,65 +2,89 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using Xunit;
 
 namespace Mirror.Tests
 {
 	public class DelegateFactoryTests
 	{
+
 		public static IEnumerable<object[]> TestCases
 		{
 			get
 			{
-				var cachedReflectionMethods = from m in typeof(DelegateFactory).GetRuntimeMethods()
-											  where m.IsPublic
-											  where m.Name == nameof(DelegateFactory.Create)
-											  select m;
+				var reflectionMethods = from m in typeof(DelegateFactory).GetRuntimeMethods()
+										where m.IsPublic
+										where m.Name == nameof(DelegateFactory.Create)
+										select m;
 
-				foreach (var methodInfo in cachedReflectionMethods)
+				var methodDescriptors = new List<MethodDescriptor>();
+				foreach (var methodInfo in reflectionMethods)
 				{
-					var methodDescriptors = new List<MethodDescriptor>();
 					var methodName = $"{methodInfo.Name}With{methodInfo.GetParameters().Length - 3}ParameterTypes";
 					var parameters = new Type[methodInfo.GetParameters().Length - 3];
 					for (var i = 0; i < parameters.Length; i++)
 					{
 						parameters[i] = typeof(int);
 					}
+					methodDescriptors.Add(new MethodDescriptor(methodName, parameters));
+					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int) }));
+				}
 
-					var parameterValues = new object[parameters.Length];
+				var typeBuilder = new TestTypeBuilder();
+				var type = typeBuilder.CreateClass("GetDelegateDynamicTestClass", methodDescriptors);
+				var instance = Activator.CreateInstance(type);
+
+				var methodsToTest = from m in type.GetRuntimeMethods()
+									where m.IsPublic
+									where m.ReturnType == typeof(MethodCallInfo)
+									select m;
+
+				foreach (var methodInfo in methodsToTest)
+				{
+
+					var parameterValues = new object[methodInfo.GetParameters().Length];
 					for (var i = 0; i < parameterValues.Length; i++)
 					{
-						parameterValues[i] = 0;
+						parameterValues[i] = i;
 					}
-					methodDescriptors.Add(new MethodDescriptor(methodName, typeof(int), parameters));
-					var obj = MyTypeBuilder.CreateNewObject(methodDescriptors);
-					var value = obj.GetType().GetRuntimeMethod(methodName, parameters).Invoke(obj, parameterValues);
 
-					yield return new object[] { new GetDelegateTestCase(obj, parameterValues, methodName, value) };
+					
+
+					if (methodInfo.IsGenericMethod)
+					{
+						var genericMethod = methodInfo.MakeGenericMethod(typeof(int));
+						var expectedReturn = (MethodCallInfo)genericMethod.Invoke(instance, parameterValues);
+						yield return new object[] { new GetDelegateTestCase(instance, parameterValues, genericMethod.Name, expectedReturn, genericMethod.Name + "Generic", new[] { typeof(int) }) };
+					}
+					else
+					{
+						var expectedReturn = (MethodCallInfo)methodInfo.Invoke(instance, parameterValues);
+						yield return new object[] { new GetDelegateTestCase(instance, parameterValues, methodInfo.Name, expectedReturn, methodInfo.Name) };
+					}
 				}
 			}
 		}
 
 		public class GetDelegateTestCase
 		{
-			public GetDelegateTestCase(object objInstance, object[] methodParameters, string methodName, object expectedReturn)
+			public GetDelegateTestCase(object objInstance, object[] methodParameters, string methodName, MethodCallInfo expectedReturn, string name, Type[] genericMethodParameters = null)
 			{
 				ObjInstance = objInstance;
 				MethodParameters = methodParameters;
 				MethodName = methodName;
 				ExpectedReturn = expectedReturn;
+				Name = name;
+				GenericMethodParameters = genericMethodParameters ?? new Type[0];
 			}
 
 			public string MethodName { get; }
 			public object[] MethodParameters { get; }
 			public object ObjInstance { get; }
-			public object ExpectedReturn { get; }
-
-			public override string ToString()
-			{
-				return MethodName;
-			}
+			public Type[] GenericMethodParameters { get; }
+			public MethodCallInfo ExpectedReturn { get; }
+			public string Name { get; }
+			public override string ToString() => Name;
 		}
 
 		[Theory]
@@ -76,6 +100,7 @@ namespace Mirror.Tests
 			}
 			parameterTypes[parameterTypes.Length - 1] = typeof(Type[]);
 
+
 			var parametersValues = new object[delegateTestCase.MethodParameters.Length + 3];
 			parametersValues[0] = delegateTestCase.ObjInstance.GetType();
 			parametersValues[1] = delegateTestCase.MethodName;
@@ -83,129 +108,35 @@ namespace Mirror.Tests
 			{
 				parametersValues[i + 2] = delegateTestCase.MethodParameters[i].GetType();
 			}
+			parametersValues[parametersValues.Length - 1] = delegateTestCase.GenericMethodParameters;
 
 			var delegateFactoryMethod = typeof(DelegateFactory).GetRuntimeMethod(nameof(DelegateFactory.Create), parameterTypes);
 			var methodDelegate = delegateFactoryMethod.Invoke(delegateTestCase.ObjInstance, parametersValues);
 			var funcInvokeMethod = methodDelegate.GetType().GetRuntimeMethods().First(x => x.Name == nameof(Func<int>.Invoke));
-			var returnValue = funcInvokeMethod.Invoke(methodDelegate, new[] { delegateTestCase.ObjInstance }.Concat(delegateTestCase.MethodParameters).ToArray());
+			var returnValue = (MethodCallInfo)funcInvokeMethod.Invoke(methodDelegate, new[] { delegateTestCase.ObjInstance }.Concat(delegateTestCase.MethodParameters).ToArray());
 
-			Assert.Equal(delegateTestCase.ExpectedReturn, returnValue);
-		}
-	}
-
-	public class FieldDescriptor
-	{
-		public FieldDescriptor(string fieldName, Type fieldType)
-		{
-			FieldName = fieldName;
-			FieldType = fieldType;
-		}
-		public string FieldName { get; }
-		public Type FieldType { get; }
-	}
-
-	public class MethodDescriptor
-	{
-		public string MethodName { get; }
-		public Type ReturnType { get; }
-		public Type[] Parameters { get; }
-
-		public MethodDescriptor(string methodName, Type returnType, Type[] parameters)
-		{
-			MethodName = methodName;
-			ReturnType = returnType;
-			Parameters = parameters;
-		}
-	}
-
-	public static class MyTypeBuilder
-	{
-		public static object CreateNewObject(List<MethodDescriptor> methods)
-		{
-			var myTypeInfo = CompileResultTypeInfo(methods);
-			var myType = myTypeInfo.AsType();
-			var myObject = Activator.CreateInstance(myType);
-
-			return myObject;
+			Assert.Equal(delegateTestCase.ExpectedReturn.MethodName, returnValue.MethodName);
+			CheckParameterValues(delegateTestCase.ExpectedReturn, returnValue);
+			CheckGenericTypeParameters(delegateTestCase.ExpectedReturn, returnValue);
 		}
 
-		public static TypeInfo CompileResultTypeInfo(List<MethodDescriptor> methods)
+		private void CheckParameterValues(MethodCallInfo expected, MethodCallInfo actual)
 		{
-			var tb = GetTypeBuilder();
-			var constructor = tb.DefineDefaultConstructor(MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
-			foreach (var methodDescriptor in methods)
+			Assert.Equal(expected.ParameterValues.Length, actual.ParameterValues.Length);
+			for (int i = 0; i < expected.ParameterValues.Length; i++)
 			{
-				CreateMethod(tb, methodDescriptor.MethodName, methodDescriptor.ReturnType, methodDescriptor.Parameters);
+				Assert.Equal(expected.ParameterValues[i], actual.ParameterValues[i]);
 			}
-
-			var objectTypeInfo = tb.CreateTypeInfo();
-			return objectTypeInfo;
 		}
 
-		private static TypeBuilder GetTypeBuilder()
+		private void CheckGenericTypeParameters(MethodCallInfo expected, MethodCallInfo actual)
 		{
-			var typeSignature = "MyDynamicType";
-			var an = new AssemblyName(typeSignature);
-			var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(Guid.NewGuid().ToString()), AssemblyBuilderAccess.Run);
-			var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
-			var tb = moduleBuilder.DefineType(typeSignature,
-					TypeAttributes.Public |
-					TypeAttributes.Class |
-					TypeAttributes.AutoClass |
-					TypeAttributes.AnsiClass |
-					TypeAttributes.BeforeFieldInit |
-					TypeAttributes.AutoLayout,
-					null);
-			return tb;
-		}
+			Assert.Equal(expected.GenericMethodParameters.Length, actual.GenericMethodParameters.Length);
 
-		private static void CreateMethod(TypeBuilder tb, string methodName, Type returnType, Type[] parameters)
-		{
-			var methodBuilder = tb.DefineMethod(methodName, MethodAttributes.Public, returnType, parameters);
-			var ilGenerator = methodBuilder.GetILGenerator();
-
-			if (returnType != typeof(void))
+			for (int i = 0; i < expected.GenericMethodParameters.Length; i++)
 			{
-				ilGenerator.Emit(OpCodes.Ldc_I4_1);
+				Assert.Equal(expected.GenericMethodParameters[i].FullName, actual.GenericMethodParameters[i].FullName);
 			}
-
-			ilGenerator.Emit(OpCodes.Ret);
-		}
-
-		private static void CreateProperty(TypeBuilder tb, string propertyName, Type propertyType)
-		{
-			var fieldBuilder = tb.DefineField("_" + propertyName, propertyType, FieldAttributes.Private);
-
-			var propertyBuilder = tb.DefineProperty(propertyName, PropertyAttributes.HasDefault, propertyType, null);
-			var getPropMthdBldr = tb.DefineMethod("get_" + propertyName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, propertyType, Type.EmptyTypes);
-			var getIl = getPropMthdBldr.GetILGenerator();
-
-			getIl.Emit(OpCodes.Ldarg_0);
-			getIl.Emit(OpCodes.Ldfld, fieldBuilder);
-			getIl.Emit(OpCodes.Ret);
-
-			var setPropMthdBldr =
-				tb.DefineMethod("set_" + propertyName,
-				  MethodAttributes.Public |
-				  MethodAttributes.SpecialName |
-				  MethodAttributes.HideBySig,
-				  null, new[] { propertyType });
-
-			var setIl = setPropMthdBldr.GetILGenerator();
-			var modifyProperty = setIl.DefineLabel();
-			var exitSet = setIl.DefineLabel();
-
-			setIl.MarkLabel(modifyProperty);
-			setIl.Emit(OpCodes.Ldarg_0);
-			setIl.Emit(OpCodes.Ldarg_1);
-			setIl.Emit(OpCodes.Stfld, fieldBuilder);
-
-			setIl.Emit(OpCodes.Nop);
-			setIl.MarkLabel(exitSet);
-			setIl.Emit(OpCodes.Ret);
-
-			propertyBuilder.SetGetMethod(getPropMthdBldr);
-			propertyBuilder.SetSetMethod(setPropMthdBldr);
 		}
 	}
 }

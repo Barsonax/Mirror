@@ -30,11 +30,19 @@ namespace Mirror
 			return (Func<object, object>)CreateDelegate(type, methodName, genericTypeParameters);
 		}
 
-		private static object CreateDelegate(Type type, string methodName, Type[] genericTypeParameters = null, params Type[] parameterTypes)
+		private static object CreateDelegate(Type type, string methodName, Type[] genericMethodParameters = null, params Type[] parameterTypes)
 		{
-			//TODO add support for generic methods
-			if (genericTypeParameters != null && genericTypeParameters.Length > 0) throw new NotImplementedException("Generics are currently not supported yet");
-			var methodInfo = type.GetRuntimeMethod(methodName, parameterTypes);
+			MethodInfo methodInfo;
+			if (genericMethodParameters != null && genericMethodParameters.Length > 0)
+			{
+				var genericMethod = type.GetRuntimeMethods().Where(m => m.Name == methodName).FirstOrDefault(m => m.GetGenericArguments().Length == genericMethodParameters.Length);
+				methodInfo = genericMethod.MakeGenericMethod(genericMethodParameters);
+			}
+			else
+			{
+				methodInfo = type.GetRuntimeMethods().Where(m => m.Name == methodName).FirstOrDefault(m => m.GetGenericArguments().Length == 0);
+			}
+
 			if (methodInfo == null) throw new ArgumentException($"Could not find a method on type {type} with name {methodName} and parameter types {string.Join(", ", parameterTypes.Select(x => x.Name))}");
 			return CreateDelegate(methodInfo);
 		}
