@@ -29,33 +29,31 @@ namespace Mirror.Tests
 					}
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int) }));
+					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int), typeof(float) }));
 				}
 
 				var typeBuilder = new TestTypeBuilder();
 				var type = typeBuilder.CreateClass("GetDelegateDynamicTestClass", methodDescriptors);
 				var instance = Activator.CreateInstance(type);
 
-				var methodsToTest = from m in type.GetRuntimeMethods()
-									where m.IsPublic
-									where m.ReturnType == typeof(MethodCallInfo)
-									select m;
-
-				foreach (var methodInfo in methodsToTest)
+				var methods = type.GetRuntimeMethods().Where(x => x.IsPublic && x.ReturnType == typeof(MethodCallInfo)).ToArray();
+				foreach (var methodDescriptor in methodDescriptors)
 				{
-
+					var methodInfo = (from m in methods
+									  where m.Name == methodDescriptor.MethodName
+									  where m.GetGenericArguments().Length == methodDescriptor.GenericParameters.Length
+									  select m).First();
 					var parameterValues = new object[methodInfo.GetParameters().Length];
 					for (var i = 0; i < parameterValues.Length; i++)
 					{
 						parameterValues[i] = i;
 					}
 
-					
-
 					if (methodInfo.IsGenericMethod)
 					{
-						var genericMethod = methodInfo.MakeGenericMethod(typeof(int));
+						var genericMethod = methodInfo.MakeGenericMethod(methodDescriptor.GenericParameters);
 						var expectedReturn = (MethodCallInfo)genericMethod.Invoke(instance, parameterValues);
-						yield return new object[] { new GetDelegateTestCase(instance, parameterValues, genericMethod.Name, expectedReturn, genericMethod.Name + "Generic", new[] { typeof(int) }) };
+						yield return new object[] { new GetDelegateTestCase(instance, parameterValues, genericMethod.Name, expectedReturn, $"{genericMethod.Name}And{methodDescriptor.GenericParameters.Length}GenericParameters", methodDescriptor.GenericParameters) };
 					}
 					else
 					{

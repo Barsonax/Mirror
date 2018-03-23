@@ -16,6 +16,7 @@ namespace Mirror.Tests
 		public Type CreateClass(string typeName, IEnumerable<MethodDescriptor> methods)
 		{
 			objCompilerParameters.ReferencedAssemblies.Add(Assembly.GetCallingAssembly().Location);
+			objCompilerParameters.GenerateInMemory = true;
 			var stringBuilder = new StringBuilder();
 			stringBuilder.AppendLine("using System;");
 			stringBuilder.AppendLine("using Mirror.Tests;");
