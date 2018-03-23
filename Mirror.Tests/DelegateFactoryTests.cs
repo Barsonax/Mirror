@@ -26,11 +26,14 @@ namespace Mirror.Tests
 					for (var i = 0; i < parameters.Length; i++)
 					{
 						parameters[i] = typeof(int);
-					}
-					methodDescriptors.Add(new MethodDescriptor(methodName+"NoReturn", parameters, null, false));
+					}					
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int) }));
 					methodDescriptors.Add(new MethodDescriptor(methodName, parameters, new[] { typeof(int), typeof(float) }));
+
+					methodDescriptors.Add(new MethodDescriptor(methodName + "NoReturn", parameters, null, false));
+					methodDescriptors.Add(new MethodDescriptor(methodName + "NoReturn", parameters, new[] { typeof(int) }, false));
+					methodDescriptors.Add(new MethodDescriptor(methodName + "NoReturn", parameters, new[] { typeof(int), typeof(float) }, false));
 				}
 
 				var typeBuilder = new TestTypeBuilder();
