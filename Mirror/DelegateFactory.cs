@@ -21,6 +21,16 @@ namespace Mirror
 			}
 		}
 
+		public static Func<object, object, object, object, object, object, object, object, object, object> Create(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3, Type parameter4, Type parameter5, Type parameter6, Type parameter7, Type parameter8, Type[] genericTypeParameters = null)
+		{
+			return (Func<object, object, object, object, object, object, object, object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1, parameter2, parameter3, parameter4, parameter5, parameter6, parameter7, parameter8);
+		}
+
+		public static Func<object, object, object, object, object, object, object, object, object> Create(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3, Type parameter4, Type parameter5, Type parameter6, Type parameter7, Type[] genericTypeParameters = null)
+		{
+			return (Func<object, object, object, object, object, object, object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1, parameter2, parameter3, parameter4, parameter5, parameter6, parameter7);
+		}
+
 		public static Func<object, object, object, object, object, object, object, object> Create(Type type, string methodName, Type parameter1, Type parameter2, Type parameter3, Type parameter4, Type parameter5, Type parameter6, Type[] genericTypeParameters = null)
 		{
 			return (Func<object, object, object, object, object, object, object, object>)CreateDelegate(type, methodName, genericTypeParameters, parameter1, parameter2, parameter3, parameter4, parameter5, parameter6);
@@ -61,6 +71,42 @@ namespace Mirror
 		public static Func<object, object> Create(Type type, string methodName, Type[] genericTypeParameters = null)
 		{
 			return (Func<object, object>)CreateDelegate(type, methodName, genericTypeParameters);
+		}
+
+		private static Func<object, object, object, object, object, object, object, object, object, object> CreateDelegateHelper<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>(MethodInfo method)
+		{
+			if (typeof(TRet) != typeof(NoReturn))
+			{
+				var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8, TRet>), method);
+				return (target, p1, p2, p3, p4, p5, p6, p7, p8) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+			}
+			else
+			{
+				var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TP8>), method);
+				return (target, p1, p2, p3, p4, p5, p6, p7, p8) =>
+				{
+					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7, (TP8)p8);
+					return null;
+				};
+			}
+		}
+
+		private static Func<object, object, object, object, object, object, object, object, object> CreateDelegateHelper<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>(MethodInfo method)
+		{
+			if (typeof(TRet) != typeof(NoReturn))
+			{
+				var func = (Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7, TRet>), method);
+				return (target, p1, p2, p3, p4, p5, p6, p7) => func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+			}
+			else
+			{
+				var func = (Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7>)Delegate.CreateDelegate(typeof(Action<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TP7>), method);
+				return (target, p1, p2, p3, p4, p5, p6, p7) =>
+				{
+					func((TObj)target, (TP1)p1, (TP2)p2, (TP3)p3, (TP4)p4, (TP5)p5, (TP6)p6, (TP7)p7);
+					return null;
+				};
+			}
 		}
 
 		private static Func<object, object, object, object, object, object, object, object> CreateDelegateHelper<TObj, TP1, TP2, TP3, TP4, TP5, TP6, TRet>(MethodInfo method)
