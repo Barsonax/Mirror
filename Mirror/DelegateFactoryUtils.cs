@@ -78,45 +78,5 @@ namespace Mirror
 		}
 
 		internal class NoReturn { }
-
-
-		private static Func<object, object> CreateDelegateHelper<TObj, TRet>(MethodInfo method)
-			where TObj : class
-		{
-			if (typeof(TRet) != typeof(NoReturn))
-			{
-				if (method.IsStatic)
-				{
-					var func = (Func<TRet>)Delegate.CreateDelegate(typeof(Func<TRet>), method);
-					return target => func();
-				}
-				else
-				{
-					var func = (Func<TObj, TRet>)Delegate.CreateDelegate(typeof(Func<TObj, TRet>), method);
-					return target => func(target as TObj);
-				}
-			}
-			else
-			{
-				if (method.IsStatic)
-				{
-					var func = (Action)Delegate.CreateDelegate(typeof(Action), method);
-					return target =>
-					{
-						func();
-						return default(TRet);
-					};
-				}
-				else
-				{
-					var func = (Action<TObj>)Delegate.CreateDelegate(typeof(Action<TObj>), method);
-					return target =>
-					{
-						func(target as TObj);
-						return default(TRet);
-					};
-				}
-			}
-		}
 	}
 }

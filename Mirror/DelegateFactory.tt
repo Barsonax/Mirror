@@ -17,7 +17,6 @@ namespace Mirror
 		var objectTypeArguments = string.Join(", ", Enumerable.Range(0, i + 2).Select(x => "object"));
 		var parameterGenericTypes = string.Join(", ", Enumerable.Range(0, i).Select((x, index) => $"TP{index}"));
 		var castedParameters= string.Join(", ", Enumerable.Range(0, i).Select((x, index) => $"(TP{index})p{index}"));
-
 	#>  
 		public static Func<<#=objectTypeArguments#>> Create(Type type, string methodName, <#for (int j = 0; j<i; j++) { #>Type parameter<#=j#>, <# } #> Type[] genericTypeParameters = null)
 		{
@@ -39,26 +38,23 @@ namespace Mirror
 					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) => func((TObj)target<#for (int j = 0; j<i; j++) { #>, (TP<#=j#>)p<#=j#><# } #>);
 				}
 			}
+			if (method.IsStatic)
+			{
+				var func = (Action<#=parameterGenericTypes.Length > 0 ? $"<{parameterGenericTypes}>" : ""#>)Delegate.CreateDelegate(typeof(Action<#=parameterGenericTypes.Length > 0 ? $"<{parameterGenericTypes}>" : ""#>), method);
+				return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) =>
+				{
+					func(<#=castedParameters#>);
+					return null;
+				};
+			}
 			else
 			{
-				if (method.IsStatic)
+				var func = (Action<TObj<#=parameterGenericTypes.Length > 0 ? "," : ""#><#=parameterGenericTypes#>>)Delegate.CreateDelegate(typeof(Action<TObj<#for (int j = 0; j<i; j++) { #>, TP<#=j#><# } #>>), method);
+				return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) =>
 				{
-					var func = (Action<#=parameterGenericTypes.Length > 0 ? $"<{parameterGenericTypes}>" : ""#>)Delegate.CreateDelegate(typeof(Action<#=parameterGenericTypes.Length > 0 ? $"<{parameterGenericTypes}>" : ""#>), method);
-					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) =>
-					{
-						func(<#=castedParameters#>);
-						return null;
-					};
-				}
-				else
-				{
-					var func = (Action<TObj<#for (int j = 0; j<i; j++) { #>, TP<#=j#><# } #>>)Delegate.CreateDelegate(typeof(Action<TObj<#for (int j = 0; j<i; j++) { #>, TP<#=j#><# } #>>), method);
-					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) =>
-					{
-						func((TObj)target<#for (int j = 0; j<i; j++) { #>, (TP<#=j#>)p<#=j#><# } #>);
-						return null;
-					};
-				}
+					func((TObj)target<#for (int j = 0; j<i; j++) { #>, (TP<#=j#>)p<#=j#><# } #>);
+					return null;
+				};
 			}
 		}<#}#>  
 	}
