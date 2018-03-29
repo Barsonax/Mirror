@@ -1,0 +1,65 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Reflection;
+
+namespace Mirror
+{
+	public class DelegateFactory
+	{
+	<#
+	for (int i = 0; i<=15; i++)   
+	{
+		var objectTypeArguments = string.Join(", ", Enumerable.Range(0, i + 2).Select(x => "object"));
+		var parameterGenericTypes = string.Join(", ", Enumerable.Range(0, i).Select((x, index) => $"TP{index}"));
+		var castedParameters= string.Join(", ", Enumerable.Range(0, i).Select((x, index) => $"(TP{index})p{index}"));
+
+	#>  
+		public static Func<<#=objectTypeArguments#>> Create(Type type, string methodName, <#for (int j = 0; j<i; j++) { #>Type parameter<#=j#>, <# } #> Type[] genericTypeParameters = null)
+		{
+			return (Func<<#=objectTypeArguments#>>)DelegateFactoryUtils.CreateDelegate(type, methodName, genericTypeParameters<#for (int j = 0; j<i; j++) { #>, parameter<#=j#><# } #>);
+		}
+
+		internal static Func<object, <#for (int j = 0; j<i; j++) { #>object, <# } #>object> CreateDelegateHelper<TObj, <#for (int j = 0; j<i; j++) { #>TP<#=j#>, <# } #>TRet>(MethodInfo method)
+		{
+			if (typeof(TRet) != typeof(DelegateFactoryUtils.NoReturn))
+			{
+				if (method.IsStatic)
+				{
+					var func = (Func<<#=parameterGenericTypes#><#=parameterGenericTypes.Length > 0 ? "," : ""#> TRet>)Delegate.CreateDelegate(typeof(Func<<#for (int j = 0; j<i; j++) { #>TP<#=j#>, <# } #>TRet>), method);
+					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) => func(<#for (int j = 0; j<i; j++) { #><#=j > 0 ? "," : ""#> (TP<#=j#>)p<#=j#><# } #>);
+				}
+				else
+				{
+					var func = (Func<TObj, <#=parameterGenericTypes#><#=parameterGenericTypes.Length > 0 ? "," : ""#>TRet>)Delegate.CreateDelegate(typeof(Func<TObj, <#for (int j = 0; j<i; j++) { #>TP<#=j#>, <# } #>TRet>), method);
+					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) => func((TObj)target<#for (int j = 0; j<i; j++) { #>, (TP<#=j#>)p<#=j#><# } #>);
+				}
+			}
+			else
+			{
+				if (method.IsStatic)
+				{
+					var func = (Action<#=parameterGenericTypes.Length > 0 ? $"<{parameterGenericTypes}>" : ""#>)Delegate.CreateDelegate(typeof(Action<#=parameterGenericTypes.Length > 0 ? $"<{parameterGenericTypes}>" : ""#>), method);
+					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) =>
+					{
+						func(<#=castedParameters#>);
+						return null;
+					};
+				}
+				else
+				{
+					var func = (Action<TObj<#for (int j = 0; j<i; j++) { #>, TP<#=j#><# } #>>)Delegate.CreateDelegate(typeof(Action<TObj<#for (int j = 0; j<i; j++) { #>, TP<#=j#><# } #>>), method);
+					return (target<#for (int j = 0; j<i; j++) { #>, p<#=j#><# } #>) =>
+					{
+						func((TObj)target<#for (int j = 0; j<i; j++) { #>, (TP<#=j#>)p<#=j#><# } #>);
+						return null;
+					};
+				}
+			}
+		}<#}#>  
+	}
+}
